@@ -20,7 +20,11 @@ const createEvaluation = (req, res) => {
 
 const generateAndEvaluate = async (req, res) => {
   try {
-    const { prompt, provider = "mock" } = req.body;
+    const {
+        prompt,
+        referenceAnswer,
+        provider = "mock"
+    } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -43,10 +47,11 @@ const generateAndEvaluate = async (req, res) => {
     }
 
     const evaluation = evaluateResponse({
-      prompt,
-      response: result.response,
-      latencyMs: result.latencyMs,
-      tokenUsage: result.tokenUsage
+        prompt,
+        response: result.response,
+        referenceAnswer,
+        latencyMs: result.latencyMs,
+        tokenUsage: result.tokenUsage
     });
 
     res.status(201).json({

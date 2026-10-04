@@ -1,6 +1,6 @@
 const { evaluateResponse } = require("../services/evaluationService");
 const { generateResponse } = require("../services/llmService");
-
+const { generateMockResponse } = require("../services/mockLlmService");
 const createEvaluation = (req, res) => {
   try {
     const evaluation = evaluateResponse(req.body);
@@ -20,7 +20,7 @@ const createEvaluation = (req, res) => {
 
 const generateAndEvaluate = async (req, res) => {
   try {
-    const { prompt } = req.body;
+    const { prompt, provider = "mock" } = req.body;
 
     if (!prompt) {
       return res.status(400).json({
@@ -29,12 +29,24 @@ const generateAndEvaluate = async (req, res) => {
       });
     }
 
-    const result = await generateResponse(prompt);
+    let result;
+
+    if (provider === "mock") {
+      result = generateMockResponse(prompt);
+    } else if (provider === "openai") {
+      result = await generateResponse(prompt);
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: "Unsupported provider. Use mock or openai."
+      });
+    }
 
     const evaluation = evaluateResponse({
       prompt,
       response: result.response,
-      latencyMs: result.latencyMs
+      latencyMs: result.latencyMs,
+      tokenUsage: result.tokenUsage
     });
 
     res.status(201).json({
@@ -42,7 +54,8 @@ const generateAndEvaluate = async (req, res) => {
       message: "LLM response generated and evaluated successfully",
       data: {
         ...evaluation,
-        responseId: result.responseId
+        responseId: result.responseId,
+        provider
       }
     });
   } catch (error) {

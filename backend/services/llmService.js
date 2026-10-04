@@ -1,13 +1,17 @@
 const OpenAI = require("openai");
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 async function generateResponse(prompt) {
   if (!prompt) {
     throw new Error("Prompt is required");
   }
+
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OpenAI API key is not configured");
+  }
+
+  const client = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
 
   const startTime = Date.now();
 
@@ -18,9 +22,13 @@ async function generateResponse(prompt) {
 
   const latencyMs = Date.now() - startTime;
 
+  const tokenUsage =
+    response.usage?.total_tokens || 0;
+
   return {
     response: response.output_text,
     latencyMs,
+    tokenUsage,
     responseId: response.id
   };
 }
